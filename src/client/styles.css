@@ -83,7 +83,7 @@ label {
   font-size: 0.9rem;
 }
 
-input {
+input, textarea, select {
   font: inherit;
   padding: 0.5rem 0.6rem;
   border: 1px solid var(--border);

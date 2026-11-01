@@ -1,6 +1,8 @@
 import { FormEvent, useEffect, useState } from "react";
 import { api, ApiError, Subject, StatsResponse, User } from "./api";
 import { SubjectsPanel } from "./StudyPanel";
+import { QuestionsPanel } from "./QuestionsPanel";
+import { MistakesPanel } from "./MistakesPanel";
 
 export function App() {
   const [user, setUser] = useState<User | null | undefined>(undefined);
@@ -139,6 +141,8 @@ function Dashboard({ user, onSignedOut }: { user: User; onSignedOut: () => void 
       )}
 
       <SubjectsPanel subjects={subjects ?? []} onChanged={reload} />
+      <QuestionsPanel subjects={subjects ?? []} />
+      <MistakesPanel subjects={subjects ?? []} />
 
       <AiSettingsPanel />
       <AccountPanel onDeleted={onSignedOut} />
