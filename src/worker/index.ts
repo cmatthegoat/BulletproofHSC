@@ -8,6 +8,7 @@ import { syllabus } from "./routes/syllabus";
 import { questions } from "./routes/questions";
 import { mistakes } from "./routes/mistakes";
 import { stats } from "./routes/stats";
+import { sessions } from "./routes/sessions";
 import { account } from "./routes/account";
 import { aiSettings } from "./routes/ai-settings";
 import {
@@ -85,6 +86,7 @@ app.route("/api/syllabus", syllabus);
 app.route("/api/questions", questions);
 app.route("/api/mistakes", mistakes);
 app.route("/api/stats", stats);
+app.route("/api/sessions", sessions);
 app.route("/api/account", account);
 app.route("/api/ai-settings", aiSettings);
 

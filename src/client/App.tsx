@@ -3,9 +3,13 @@ import { api, ApiError, Subject, StatsResponse, User } from "./api";
 import { SubjectsPanel } from "./StudyPanel";
 import { QuestionsPanel } from "./QuestionsPanel";
 import { MistakesPanel } from "./MistakesPanel";
+import { SessionsPanel, StudySession } from "./SessionsPanel";
+import { ClubPanel } from "./ClubPanel";
+import { Landing } from "./Landing";
 
 export function App() {
   const [user, setUser] = useState<User | null | undefined>(undefined);
+  const [showAuth, setShowAuth] = useState(false);
 
   useEffect(() => {
     api<{ user: User }>("/api/auth/me")
@@ -14,7 +18,9 @@ export function App() {
   }, []);
 
   if (user === undefined) return <p className="status" role="status">Loading…</p>;
-  if (user === null) return <AuthForm onAuthed={setUser} />;
+  if (user === null) {
+    return showAuth ? <AuthForm onAuthed={setUser} /> : <Landing onSignIn={() => setShowAuth(true)} />;
+  }
   return <Dashboard user={user} onSignedOut={() => setUser(null)} />;
 }
 
@@ -72,12 +78,18 @@ function AuthForm({ onAuthed }: { onAuthed: (u: User) => void }) {
 function Dashboard({ user, onSignedOut }: { user: User; onSignedOut: () => void }) {
   const [subjects, setSubjects] = useState<Subject[] | null>(null);
   const [stats, setStats] = useState<StatsResponse | null>(null);
+  const [sessions, setSessions] = useState<StudySession[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   async function reload() {
-    const [s, st] = await Promise.all([api<{ subjects: Subject[] }>("/api/subjects"), api<StatsResponse>("/api/stats")]);
+    const [s, st, ss] = await Promise.all([
+      api<{ subjects: Subject[] }>("/api/subjects"),
+      api<StatsResponse>("/api/stats"),
+      api<{ sessions: StudySession[] }>("/api/sessions"),
+    ]);
     setSubjects(s.subjects);
     setStats(st);
+    setSessions(ss.sessions);
   }
 
   useEffect(() => {
@@ -103,7 +115,7 @@ function Dashboard({ user, onSignedOut }: { user: User; onSignedOut: () => void 
       {!subjects && !error && <p className="status" role="status">Loading your subjects…</p>}
 
       {subjects && subjects.length === 0 && (
-        <p className="empty">No subjects yet. Add one through the API to start tracking mistakes.</p>
+        <p className="empty">No subjects yet. Add one in Manage subjects below to start tracking.</p>
       )}
 
       {subjects && subjects.length > 0 && (
@@ -140,7 +152,10 @@ function Dashboard({ user, onSignedOut }: { user: User; onSignedOut: () => void 
         </section>
       )}
 
+      {stats && <ClubPanel club={stats.club} />}
+
       <SubjectsPanel subjects={subjects ?? []} onChanged={reload} />
+      <SessionsPanel subjects={subjects ?? []} sessions={sessions} onChanged={reload} />
       <QuestionsPanel subjects={subjects ?? []} />
       <MistakesPanel subjects={subjects ?? []} />
 

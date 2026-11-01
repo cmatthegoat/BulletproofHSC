@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { AppError } from "../errors";
 import type { Env, AppVariables } from "../env";
 import { ownedSubject } from "./subjects";
+import { MINUTES_PER_FIXTURE } from "../../shared/rewards";
 
 type Ctx = { Bindings: Env; Variables: AppVariables };
 export const stats = new Hono<Ctx>();
@@ -72,7 +73,23 @@ stats.get("/", async (c) => {
     .bind(...(subjectId === null ? [userId] : [userId, subjectId]))
     .all();
 
+  // Club summary from Study FC: total study time, club cash, and fixtures unlocked by study minutes.
+  const club = await c.env.DB
+    .prepare(
+      `SELECT COALESCE(SUM(minutes), 0) AS total_minutes, COALESCE(SUM(club_cash), 0) AS club_cash
+       FROM study_sessions WHERE user_id = ?`,
+    )
+    .bind(userId)
+    .first<{ total_minutes: number; club_cash: number }>();
+  const totalMinutes = club?.total_minutes ?? 0;
+
   return c.json({
+    club: {
+      total_minutes: totalMinutes,
+      club_cash: Math.round((club?.club_cash ?? 0) * 100) / 100,
+      fixtures_unlocked: Math.floor(totalMinutes / MINUTES_PER_FIXTURE),
+      minutes_to_next_fixture: MINUTES_PER_FIXTURE - (totalMinutes % MINUTES_PER_FIXTURE),
+    },
     by_subject: bySubject.results,
     trend: trend.results.reverse(),
     weak_points: weakPoints.results,

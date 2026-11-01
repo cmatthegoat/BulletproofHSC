@@ -35,6 +35,12 @@ export interface Subject {
 }
 
 export interface StatsResponse {
+  club: {
+    total_minutes: number;
+    club_cash: number;
+    fixtures_unlocked: number;
+    minutes_to_next_fixture: number;
+  };
   by_subject: { subject_id: number; name: string; color: string; attempts: number; average_percentage: number | null }[];
   open_mistakes_by_category: { category: string; count: number; repeats: number }[];
 }
