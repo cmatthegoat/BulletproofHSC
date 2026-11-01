@@ -12,9 +12,8 @@ run_worker_first = ["/api/*"]
 [[d1_databases]]
 binding = "DB"
 database_name = "hsc-mistake-journal"
-database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+database_id = "93517d7e-0a64-48aa-8608-b9b7e00b9d0d"
 migrations_dir = "migrations"
 
 [vars]
 DAILY_AI_LIMIT = "20"
-OPENROUTER_MODEL = "openai/gpt-4o-mini"

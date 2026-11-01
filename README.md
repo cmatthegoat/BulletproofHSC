@@ -6,7 +6,7 @@ A study tracker for HSC subjects: syllabus points, marked practice questions, an
 
 ```bash
 npm install
-cp .dev.vars.example .dev.vars   # then set OPENROUTER_API_KEY in it
+cp .dev.vars.example .dev.vars   # then set AI_KEY_SECRET in it (any long random string)
 npm run db:migrate:local         # apply migrations to the local D1 database
 ```
 

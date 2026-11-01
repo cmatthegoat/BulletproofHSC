@@ -1,4 +1,4 @@
 # Copy to .dev.vars for local development. Never commit the real file.
-# Set the real key with: wrangler secret put OPENROUTER_API_KEY (production)
-OPENROUTER_API_KEY=
-OPENROUTER_MODEL=openai/gpt-4o-mini
+# Set the real value with: wrangler secret put AI_KEY_SECRET (production).
+# Users add their own OpenRouter key and model in the app; no AI key is stored here.
+AI_KEY_SECRET=

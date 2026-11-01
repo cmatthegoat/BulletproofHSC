@@ -96,7 +96,8 @@ describe("syllabus", () => {
   it("returns a parsed draft from the AI without saving it", async () => {
     const cookie = await signup("y3@example.com");
     const reply = { choices: [{ message: { content: '{"points":[{"code":"A1","description":"Define GDP"}]}' } }] };
-    const env = { ...baseEnv(), OPENROUTER_API_KEY: "test-key", OPENROUTER_MODEL: "test/model" };
+    const env = { ...baseEnv(), AI_KEY_SECRET: "test-secret" };
+    await call("PUT", "/api/ai-settings", cookie, { api_key: "sk-or-test-1234", model: "test/model" }, env);
     const realFetch = globalThis.fetch;
     globalThis.fetch = (async () => new Response(JSON.stringify(reply), { status: 200 })) as typeof fetch;
     try {

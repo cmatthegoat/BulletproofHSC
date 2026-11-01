@@ -52,12 +52,17 @@ function stubAi(bodies: string[]) {
   };
 }
 
+// The AI key is per user: the test saves one for each account via /api/ai-settings.
 const aiEnv = (extra: Record<string, string> = {}) => ({
   ...baseEnv(),
-  OPENROUTER_API_KEY: "test-key",
-  OPENROUTER_MODEL: "test/model",
+  AI_KEY_SECRET: "test-secret",
   ...extra,
 });
+
+async function saveAiKey(cookie: string, env: any = aiEnv()) {
+  const res = await call("PUT", "/api/ai-settings", cookie, { api_key: "sk-or-test-1234", model: "test/model" }, env);
+  expect(res.status).toBe(200);
+}
 
 async function makeQuestion(cookie: string, env: any = baseEnv()) {
   const { id: subjectId } = await json(await call("POST", "/api/subjects", cookie, { name: "Biology" }, env));
@@ -151,6 +156,7 @@ describe("AI marking", () => {
   it("stores a clamped attempt and returns the result", async () => {
     const cookie = await signup("m1@example.com");
     const env = aiEnv();
+    await saveAiKey(cookie, env);
     const { questionId } = await makeQuestion(cookie, env);
     const restore = stubAi([markReply(9, 4)]);
     try {
@@ -169,6 +175,7 @@ describe("AI marking", () => {
   it("retries once with the stricter prompt after a bad reply", async () => {
     const cookie = await signup("m2@example.com");
     const env = aiEnv();
+    await saveAiKey(cookie, env);
     const { questionId } = await makeQuestion(cookie, env);
     const restore = stubAi(["sorry, no json", markReply(2, 4)]);
     try {
@@ -183,6 +190,7 @@ describe("AI marking", () => {
   it("returns a clear error and releases the quota when the AI reply stays malformed", async () => {
     const cookie = await signup("m3@example.com");
     const env = aiEnv({ DAILY_AI_LIMIT: "1" });
+    await saveAiKey(cookie, env);
     const { questionId } = await makeQuestion(cookie, env);
     const restore = stubAi(["bad", "still bad"]);
     try {
@@ -200,6 +208,7 @@ describe("AI marking", () => {
   it("enforces the daily limit", async () => {
     const cookie = await signup("m4@example.com");
     const env = aiEnv({ DAILY_AI_LIMIT: "1" });
+    await saveAiKey(cookie, env);
     const { questionId } = await makeQuestion(cookie, env);
     const restore = stubAi([markReply(3, 4)]);
     try {
@@ -226,6 +235,7 @@ describe("cross-user access on question routes", () => {
     const aCookie = await signup("qa@example.com");
     const bCookie = await signup("qb@example.com");
     const env = aiEnv();
+    await saveAiKey(bCookie, env);
     const { subjectId, questionId } = await makeQuestion(aCookie, env);
 
     expect((await call("GET", `/api/questions/${questionId}`, bCookie)).status).toBe(404);

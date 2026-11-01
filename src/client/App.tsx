@@ -136,8 +136,110 @@ function Dashboard({ user, onSignedOut }: { user: User; onSignedOut: () => void 
         </section>
       )}
 
+      <AiSettingsPanel />
       <AccountPanel onDeleted={onSignedOut} />
     </main>
+  );
+}
+
+interface AiSettingsView {
+  configured: boolean;
+  key_hint: string;
+  model: string;
+}
+
+function AiSettingsPanel() {
+  const [view, setView] = useState<AiSettingsView | null>(null);
+  const [apiKey, setApiKey] = useState("");
+  const [model, setModel] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    api<AiSettingsView>("/api/ai-settings")
+      .then((v) => {
+        setView(v);
+        setModel(v.model);
+      })
+      .catch(() => setError("Could not load your AI settings."));
+  }, []);
+
+  async function save(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const body: { api_key?: string; model: string } = { model };
+      if (apiKey.trim()) body.api_key = apiKey.trim();
+      const v = await api<AiSettingsView>("/api/ai-settings", { method: "PUT", body });
+      setView(v);
+      setModel(v.model);
+      setApiKey("");
+      setMessage("Saved. AI marking and syllabus parsing will use your key.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not save your settings.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function remove() {
+    if (!window.confirm("Remove your OpenRouter key? AI features will stop until you add one again.")) return;
+    setBusy(true);
+    setError(null);
+    setMessage(null);
+    try {
+      await api("/api/ai-settings", { method: "DELETE" });
+      setView({ configured: false, key_hint: "", model: "" });
+      setModel("");
+      setMessage("Your key has been removed.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not remove your key.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="card account" aria-labelledby="ai-heading">
+      <h2 id="ai-heading">AI settings</h2>
+      <p className="muted">
+        Use your own OpenRouter key. It is stored encrypted and only used for your marking and syllabus parsing. Get a key at openrouter.ai.
+      </p>
+      {view?.configured && <p>Key saved (ends in …{view.key_hint}).</p>}
+      <form onSubmit={save}>
+        <label>
+          OpenRouter API key
+          <input
+            type="password"
+            autoComplete="off"
+            placeholder={view?.configured ? "Leave blank to keep your saved key" : "sk-or-…"}
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+          />
+        </label>
+        <label>
+          Model
+          <input
+            type="text"
+            required
+            placeholder="openai/gpt-4o-mini"
+            value={model}
+            onChange={(e) => setModel(e.target.value)}
+          />
+        </label>
+        <div className="row">
+          <button type="submit" disabled={busy || !view || (!view.configured && !apiKey.trim())}>Save AI settings</button>
+          {view?.configured && (
+            <button type="button" className="danger-btn" disabled={busy} onClick={remove}>Remove key</button>
+          )}
+        </div>
+      </form>
+      {message && <p role="status">{message}</p>}
+      {error && <p className="error" role="alert">{error}</p>}
+    </section>
   );
 }
 

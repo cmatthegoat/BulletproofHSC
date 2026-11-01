@@ -5,6 +5,7 @@ import type { Env, AppVariables } from "../env";
 import { ownedSubject } from "./subjects";
 import { buildSyllabusMessages, parseSyllabusReply } from "../syllabus-parser";
 import { chatCompletion } from "../openrouter";
+import { requireAiSettings } from "../ai-settings";
 
 type Ctx = { Bindings: Env; Variables: AppVariables };
 export const syllabus = new Hono<Ctx>();
@@ -63,10 +64,11 @@ syllabus.post("/parse", async (c) => {
   if (!parsed.success) throw new AppError(400, "invalid_input", parsed.error.issues[0].message);
   const text = parsed.data.text;
 
-  const first = parseSyllabusReply(await chatCompletion(c.env, buildSyllabusMessages(text, false)));
+  const settings = await requireAiSettings(c.env, c.get("userId"));
+  const first = parseSyllabusReply(await chatCompletion(settings, buildSyllabusMessages(text, false)));
   if (first) return c.json({ draft: first });
 
-  const retry = parseSyllabusReply(await chatCompletion(c.env, buildSyllabusMessages(text, true)));
+  const retry = parseSyllabusReply(await chatCompletion(settings, buildSyllabusMessages(text, true)));
   if (retry) return c.json({ draft: retry });
 
   throw new AppError(502, "ai_bad_format", "The AI could not structure that text. Try a shorter extract, or add the points by hand.");

@@ -5,6 +5,7 @@ import type { Env, AppVariables } from "../env";
 import { ownedSubject } from "./subjects";
 import { recordMistake } from "./mistakes";
 import { chatCompletion } from "../openrouter";
+import { requireAiSettings } from "../ai-settings";
 import {
   buildMarkingMessages,
   clampResult,
@@ -143,17 +144,18 @@ questions.post("/:id/mark", async (c) => {
   const q = await ownedQuestion(c.env.DB, userId, id);
   if (!q.student_answer.trim()) throw new AppError(400, "invalid_input", "Write the answer before marking it.");
 
+  const settings = await requireAiSettings(c.env, userId);
   await reserveAiCall(c.env.DB, c.env, userId);
   let result;
   try {
-    const first = parseMarkingReply(await chatCompletion(c.env, buildMarkingMessages({
+    const first = parseMarkingReply(await chatCompletion(settings, buildMarkingMessages({
       questionText: q.question_text,
       totalMarks: q.total_marks,
       criteria: q.marking_criteria,
       answer: q.student_answer,
       strict: false,
     })));
-    const reply = first ?? parseMarkingReply(await chatCompletion(c.env, buildMarkingMessages({
+    const reply = first ?? parseMarkingReply(await chatCompletion(settings, buildMarkingMessages({
       questionText: q.question_text,
       totalMarks: q.total_marks,
       criteria: q.marking_criteria,
