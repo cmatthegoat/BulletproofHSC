@@ -1,0 +1,4 @@
+# Copy to .dev.vars for local development. Never commit the real file.
+# Set the real key with: wrangler secret put OPENROUTER_API_KEY (production)
+OPENROUTER_API_KEY=
+OPENROUTER_MODEL=openai/gpt-4o-mini
