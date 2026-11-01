@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import { api, ApiError, Subject, StatsResponse, User } from "./api";
+import { SubjectsPanel } from "./StudyPanel";
 
 export function App() {
   const [user, setUser] = useState<User | null | undefined>(undefined);
@@ -71,13 +72,14 @@ function Dashboard({ user, onSignedOut }: { user: User; onSignedOut: () => void 
   const [stats, setStats] = useState<StatsResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  async function reload() {
+    const [s, st] = await Promise.all([api<{ subjects: Subject[] }>("/api/subjects"), api<StatsResponse>("/api/stats")]);
+    setSubjects(s.subjects);
+    setStats(st);
+  }
+
   useEffect(() => {
-    Promise.all([api<{ subjects: Subject[] }>("/api/subjects"), api<StatsResponse>("/api/stats")])
-      .then(([s, st]) => {
-        setSubjects(s.subjects);
-        setStats(st);
-      })
-      .catch((err) => setError(err instanceof Error ? err.message : "Could not load your data."));
+    reload().catch((err) => setError(err instanceof Error ? err.message : "Could not load your data."));
   }, []);
 
   async function logout() {
@@ -135,6 +137,8 @@ function Dashboard({ user, onSignedOut }: { user: User; onSignedOut: () => void 
           </ul>
         </section>
       )}
+
+      <SubjectsPanel subjects={subjects ?? []} onChanged={reload} />
 
       <AiSettingsPanel />
       <AccountPanel onDeleted={onSignedOut} />
